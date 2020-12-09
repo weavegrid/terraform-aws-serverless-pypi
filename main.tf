@@ -1,5 +1,5 @@
 terraform {
-  required_version = "~> 0.13"
+  required_version = "~> 0.12"
 
   required_providers {
     aws = {
@@ -42,11 +42,7 @@ locals {
 
   rest_api = {
     authorization    = var.rest_api_authorization
-    authorizer_id    = var.rest_api_authorizer_id
     base_path        = var.rest_api_base_path
-    execution_arn    = var.rest_api_execution_arn
-    id               = var.rest_api_id
-    root_resource_id = var.rest_api_root_resource_id
   }
 
   s3 = {
@@ -189,7 +185,7 @@ resource "aws_lambda_permission" "invoke_api" {
   principal     = "apigateway.amazonaws.com"
   qualifier     = local.lambda_api.qualifier
   statement_id  = "InvokeAPI"
-  source_arn    = "${local.rest_api.execution_arn}/*/*/*"
+  source_arn    = "${aws_api_gateway_rest_api.gw.execution_arn}/*/*/*"
 }
 
 # LAMBDA :: REINDEXER
@@ -230,36 +226,48 @@ resource "aws_lambda_permission" "invoke_reindex" {
 
 # API GATEWAY :: /
 
+resource "aws_api_gateway_rest_api" "gw" {
+  name = "Weave Grid Private PyPi"
+}
+
+# resource "aws_api_gateway_stage" "main" {
+#   stage_name = "main"
+#   rest_api_id = aws_api_gateway_rest_api.gw.id
+
+# }
+
+resource "aws_api_gateway_deployment" "main" {
+  rest_api_id = aws_api_gateway_rest_api.gw.id
+  stage_name = "main"
+}
+
 resource "aws_api_gateway_method" "root_get" {
   authorization = local.rest_api.authorization
-  authorizer_id = local.rest_api.authorizer_id
   http_method   = "GET"
-  resource_id   = local.rest_api.root_resource_id
-  rest_api_id   = local.rest_api.id
+  resource_id   = aws_api_gateway_rest_api.gw.root_resource_id
+  rest_api_id   = aws_api_gateway_rest_api.gw.id
 }
 
 resource "aws_api_gateway_method" "root_head" {
   authorization = local.rest_api.authorization
-  authorizer_id = local.rest_api.authorizer_id
   http_method   = "HEAD"
-  resource_id   = local.rest_api.root_resource_id
-  rest_api_id   = local.rest_api.id
+  resource_id   = aws_api_gateway_rest_api.gw.root_resource_id
+  rest_api_id   = aws_api_gateway_rest_api.gw.id
 }
 
 resource "aws_api_gateway_method" "root_post" {
   authorization = local.rest_api.authorization
-  authorizer_id = local.rest_api.authorizer_id
   http_method   = "POST"
-  resource_id   = local.rest_api.root_resource_id
-  rest_api_id   = local.rest_api.id
+  resource_id   = aws_api_gateway_rest_api.gw.root_resource_id
+  rest_api_id   = aws_api_gateway_rest_api.gw.id
 }
 
 resource "aws_api_gateway_integration" "root_get" {
   content_handling        = "CONVERT_TO_TEXT"
   http_method             = aws_api_gateway_method.root_get.http_method
   integration_http_method = "POST"
-  resource_id             = local.rest_api.root_resource_id
-  rest_api_id             = local.rest_api.id
+  resource_id   = aws_api_gateway_rest_api.gw.root_resource_id
+  rest_api_id   = aws_api_gateway_rest_api.gw.id
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.api.invoke_arn
 }
@@ -268,8 +276,8 @@ resource "aws_api_gateway_integration" "root_head" {
   content_handling        = "CONVERT_TO_TEXT"
   http_method             = aws_api_gateway_method.root_head.http_method
   integration_http_method = "POST"
-  resource_id             = local.rest_api.root_resource_id
-  rest_api_id             = local.rest_api.id
+  resource_id   = aws_api_gateway_rest_api.gw.root_resource_id
+  rest_api_id   = aws_api_gateway_rest_api.gw.id
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.api.invoke_arn
 }
@@ -278,8 +286,8 @@ resource "aws_api_gateway_integration" "root_post" {
   content_handling        = "CONVERT_TO_TEXT"
   http_method             = aws_api_gateway_method.root_post.http_method
   integration_http_method = "POST"
-  resource_id             = local.rest_api.root_resource_id
-  rest_api_id             = local.rest_api.id
+  resource_id   = aws_api_gateway_rest_api.gw.root_resource_id
+  rest_api_id   = aws_api_gateway_rest_api.gw.id
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.api.invoke_arn
 }
@@ -287,33 +295,30 @@ resource "aws_api_gateway_integration" "root_post" {
 # API GATEWAY :: /{proxy+}
 
 resource "aws_api_gateway_resource" "proxy" {
-  rest_api_id = local.rest_api.id
-  parent_id   = local.rest_api.root_resource_id
+  rest_api_id   = aws_api_gateway_rest_api.gw.id
+  parent_id   = aws_api_gateway_rest_api.gw.root_resource_id
   path_part   = "{proxy+}"
 }
 
 resource "aws_api_gateway_method" "proxy_get" {
   authorization = local.rest_api.authorization
-  authorizer_id = local.rest_api.authorizer_id
   http_method   = "GET"
   resource_id   = aws_api_gateway_resource.proxy.id
-  rest_api_id   = local.rest_api.id
+  rest_api_id   = aws_api_gateway_rest_api.gw.id
 }
 
 resource "aws_api_gateway_method" "proxy_head" {
   authorization = local.rest_api.authorization
-  authorizer_id = local.rest_api.authorizer_id
   http_method   = "HEAD"
   resource_id   = aws_api_gateway_resource.proxy.id
-  rest_api_id   = local.rest_api.id
+  rest_api_id   = aws_api_gateway_rest_api.gw.id
 }
 
 resource "aws_api_gateway_method" "proxy_post" {
   authorization = local.rest_api.authorization
-  authorizer_id = local.rest_api.authorizer_id
   http_method   = "POST"
   resource_id   = aws_api_gateway_resource.proxy.id
-  rest_api_id   = local.rest_api.id
+  rest_api_id   = aws_api_gateway_rest_api.gw.id
 }
 
 resource "aws_api_gateway_integration" "proxy_get" {
@@ -321,7 +326,7 @@ resource "aws_api_gateway_integration" "proxy_get" {
   http_method             = aws_api_gateway_method.proxy_get.http_method
   integration_http_method = "POST"
   resource_id             = aws_api_gateway_resource.proxy.id
-  rest_api_id             = local.rest_api.id
+  rest_api_id   = aws_api_gateway_rest_api.gw.id
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.api.invoke_arn
 }
@@ -331,7 +336,7 @@ resource "aws_api_gateway_integration" "proxy_head" {
   http_method             = aws_api_gateway_method.proxy_head.http_method
   integration_http_method = "POST"
   resource_id             = aws_api_gateway_resource.proxy.id
-  rest_api_id             = local.rest_api.id
+  rest_api_id   = aws_api_gateway_rest_api.gw.id
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.api.invoke_arn
 }
@@ -341,7 +346,7 @@ resource "aws_api_gateway_integration" "proxy_post" {
   http_method             = aws_api_gateway_method.proxy_post.http_method
   integration_http_method = "POST"
   resource_id             = aws_api_gateway_resource.proxy.id
-  rest_api_id             = local.rest_api.id
+  rest_api_id   = aws_api_gateway_rest_api.gw.id
   type                    = "AWS_PROXY"
   uri                     = aws_lambda_function.api.invoke_arn
 }

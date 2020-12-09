@@ -13,6 +13,10 @@ output "lambda_reindex" {
   value       = aws_lambda_function.reindex
 }
 
+output "rest_api_gateway" {
+  value = aws_api_gateway_rest_api.gw
+}
+
 output "rest_api_redeployment_trigger" {
   description = "API Gateway REST API redeployment trigger"
   value = sha1(join(",", list(

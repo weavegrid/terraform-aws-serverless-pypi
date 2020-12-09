@@ -5,6 +5,7 @@ variable "iam_role_description" {
 
 variable "iam_role_name" {
   description = "Lambda function role name"
+  default = "pypi-lambda-role"
 }
 
 variable "iam_role_policy_name" {
@@ -19,11 +20,12 @@ variable "lambda_api_description" {
 
 variable "lambda_api_fallback_index_url" {
   description = "Optional fallback PyPI index URL"
-  default     = null
+  default     = "https://pypi.org/simple/"
 }
 
 variable "lambda_api_function_name" {
   description = "REST API Lambda function name"
+  default = "pypi-serverless"
 }
 
 variable "lambda_api_memory_size" {
@@ -49,6 +51,7 @@ variable "lambda_reindex_description" {
 
 variable "lambda_reindex_function_name" {
   description = "Reindexer Lambda function name"
+  default = "pypi-serverless-reindex"
 }
 
 variable "lambda_reindex_memory_size" {
@@ -82,30 +85,14 @@ variable "rest_api_authorization" {
   default     = "NONE"
 }
 
-variable "rest_api_authorizer_id" {
-  description = "API Gateway authorizer ID"
-  default     = null
-}
-
 variable "rest_api_base_path" {
   description = "PyPI index API Gateway base path"
   default     = null
 }
 
-variable "rest_api_execution_arn" {
-  description = "API Gateway REST API execution ARN"
-}
-
-variable "rest_api_id" {
-  description = "API Gateway REST API ID"
-}
-
-variable "rest_api_root_resource_id" {
-  description = "API Gateway root resource ID"
-}
-
 variable "s3_bucket_name" {
   description = "PyPI index S3 bucket name"
+  default = "wg-pypi-private"
 }
 
 variable "s3_presigned_url_ttl" {
